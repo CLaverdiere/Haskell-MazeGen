@@ -4,14 +4,16 @@ import sys
 # Draws maze given coordinates of 4-tuple format:
 # [(x1, y1, x2, y2), ...]
 
-data = eval(sys.argv[1])
+w, h = eval(sys.argv[1])
+coords = eval(sys.argv[2])
+
 dim = 512
-scale = dim / 10
+scale = dim / ((w+h) / 2.)
 
 img = Image.new("RGB", (dim, dim))
 draw = ImageDraw.Draw(img)
 
-for coord in data:
+for coord in coords:
     x1, y1, x2, y2 = [x * scale for x in coord]
     draw.line((x1, y1, x2, y2), width=3, fill="rgb(0, 100, 200)")
 

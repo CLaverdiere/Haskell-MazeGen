@@ -7,6 +7,7 @@ module DisjointSet
 , dFind
 , makeSet
 , nextUnion
+, DSet
 ) where
 
 import Data.List

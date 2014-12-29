@@ -1,12 +1,13 @@
 -- Haskell Maze Generator
 
 import DisjointSet
-import System.Random
 import Data.List
+import System.Random.Shuffle
+import System.Random.Mersenne.Pure64 (newPureMT)
 
 -- Settings
-height = 10
-width = 10
+height = 5
+width = 5
 wallStr = "x"
 emptyStr = " "
 
@@ -56,6 +57,7 @@ genCoord (w, h) (p1, p2) =
   in if p1d == p2d then (p1m, p1d, p1m+1, p1d)
                    else (p1m, p1d, p1m, p1d+1)
 
+-- Return coordinate pairs of maze boundary.
 genBoundary :: Dims -> [CoordPair]
 genBoundary (w, h) =
      [(x1,h1,x1+1,h1) | x1 <- [0..w-1], h1 <- [0, h]]
@@ -68,18 +70,24 @@ adjacent (w, h) (x, y) = dh + dw == 1
     dh = abs ((y `div` w) - (x `div` w))
     dw = abs ((y `mod` w) - (x `mod` w))
 
+-- Return coordinate pairs for maze given random edge input.
+genMaze :: Dims -> [Edge] -> [(DSet Int)] -> [CoordPair]
+genMaze (w, h) edges sets = inner_edges ++ outer_edges
+  where
+    (m_edges, m_sets) = foldl nextUnion (edges, sets) edges
+    inner_edges = map (genCoord (w, h)) m_edges
+    outer_edges = genBoundary (w, h)
+
 -- Unique 2-tuples
 perms2 xs = concat $ zipWith (zip . repeat) xs $ tails xs
 
 main = do
   -- putStrLn $ mazeStr maze (width, height)
-  -- TODO use random union ordering instead.
-  print $ inner_edges ++ outer_edges
-  -- print $ inner_edges
+  gen <- newPureMT
+  print $ (width, height)
+  print $ genMaze (width, height) (shuffle' edges (length edges) gen) sets
     where
-      cells = [0..(width*height)-1]
-      edges = genEdges (width, height)
+      l = (width*height)-1
+      cells = [0 .. l]
       sets = makeSet cells
-      (m_edges, m_sets) = foldl nextUnion (edges, sets) edges
-      inner_edges = map (genCoord (width, height)) m_edges
-      outer_edges = genBoundary (width, height)
+      edges = genEdges (width, height)
