@@ -1,62 +1,85 @@
 -- Haskell Maze Generator
 
 import DisjointSet
-
 import System.Random
 import Data.List
 
--- TODO use Union/Find algorithm
-
 -- Settings
-height = 2
-width = 2
+height = 10
+width = 10
 wallStr = "x"
 emptyStr = " "
 
 -- Maze dimensions
 type Dims = (Int, Int)
 
--- A maze coordinate is just a 2D int tuple.
-type MazeCoord = (Int, Int)
+-- An edge is also just a 2D int tuple, as the wall between two cells.
+type Edge = (Int, Int)
 
--- A wall is defined by a start coordinate, and end coordinate.
-type Wall = (MazeCoord, MazeCoord)
+-- Coordinate pairs readable by Python (PIL).
+-- (x1, y1, x2, y2)
+type CoordPair = (Int, Int, Int, Int)
 
 -- A maze is just an arbitrary collection of walls.
-type Maze = [Wall]
+type Maze = [Edge]
 
-dist :: MazeCoord -> MazeCoord -> Int
+-- Cartesian distance between two coordinates.
+dist :: Edge -> Edge -> Int
 dist (px, py) (qx, qy) = abs (px - qx) + abs (py - qy)
 
 -- Print simple text representation of maze.
-mazeStr :: Maze -> Dims -> String
-mazeStr xs (dx, dy) = concatMap sym coords
-  where
-    coords = [(x, y) | x <- [0..dx], y <- [0..dy]]
-    combs = concatMap (\((a,b),(c,d)) -> [(a,b),(c,d)]) xs
-    sym (x, y)
-      | (x, y) `elem` combs = wallStr ++ formatStr
-      | otherwise           = emptyStr ++ formatStr
-        where
-          formatStr = if x == dx then "\n" else ""
+-- mazeStr :: Maze -> Dims -> String
+-- mazeStr xs (dx, dy) = concatMap sym coords
+--   where
+--     coords = [(x, y) | x <- [0..dx], y <- [0..dy]]
+--     combs = concatMap (\((a,b),(c,d)) -> [(a,b),(c,d)]) xs
+--     sym (x, y)
+--       | (x, y) `elem` combs = wallStr ++ formatStr
+--       | otherwise           = emptyStr ++ formatStr
+--         where
+--           formatStr = if x == dx then "\n" else ""
 
--- Return a list of available walls at a given coordinate.
-coordPairs :: (Int, Int) -> MazeCoord -> [Wall]
-coordPairs (dx, dy) (x, y)
-  | (x < 0) || (x > dx) || (y < 0) || (y > dy) = []
-  | otherwise = [c | (x', f, c) <- (zip3 xs fs cs), (f x') == True]
-    where
-      xs = [x, x, y, y]
-      fs = [(>0), (<dx), (>0), (<dy)]
-      cs = [((x-1, y), (x, y)), ((x, y), (x+1, y)),
-            ((x, y-1), (x, y)), ((x, y), (x, y+1))]
+-- Return a list of edges for a maze with given dimensions.
+-- Excludes boundary walls.
+genEdges :: Dims -> [Edge]
+genEdges d@(w, h) = filter (adjacent d) pairs
+  where
+    el = [0..(w*h)-1]
+    pairs = perms2 el
+
+-- Given edges and dimensions, return coordinate pairs for each edge.
+genCoord :: Dims -> Edge -> CoordPair
+genCoord (w, h) (p1, p2) =
+  let p1d = (p1 `div` h)
+      p2d = (p2 `div` h)
+      p1m = (p1 `mod` w)
+  in if p1d == p2d then (p1m, p1d, p1m+1, p1d)
+                   else (p1m, p1d, p1m, p1d+1)
+
+genBoundary :: Dims -> [CoordPair]
+genBoundary (w, h) =
+     [(x1,h1,x1+1,h1) | x1 <- [0..w-1], h1 <- [0, h]]
+  ++ [(w1,y1,w1,y1+1) | y1 <- [0..h-1], w1 <- [0, w]]
+
+-- Decide if two cells are adjacent.
+adjacent :: Dims -> Dims -> Bool
+adjacent (w, h) (x, y) = dh + dw == 1
+  where
+    dh = abs ((y `div` w) - (x `div` w))
+    dw = abs ((y `mod` w) - (x `mod` w))
+
+-- Unique 2-tuples
+perms2 xs = concat $ zipWith (zip . repeat) xs $ tails xs
 
 main = do
   -- putStrLn $ mazeStr maze (width, height)
   -- TODO use random union ordering instead.
-  print $ jset
+  print $ inner_edges ++ outer_edges
+  -- print $ inner_edges
     where
-      grid = [(x, y) | x <- [0..width], y <- [0..height]]
-      maze = nub $ concatMap (coordPairs (width, height)) grid
-      dset = makeSet maze
-      jset = foldr (\_ y -> nextUnion y) dset [1..length dset]
+      cells = [0..(width*height)-1]
+      edges = genEdges (width, height)
+      sets = makeSet cells
+      (m_edges, m_sets) = foldl nextUnion (edges, sets) edges
+      inner_edges = map (genCoord (width, height)) m_edges
+      outer_edges = genBoundary (width, height)
