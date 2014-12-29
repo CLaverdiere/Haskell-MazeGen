@@ -1,4 +1,5 @@
 -- Haskell Maze Generator
+-- Uses a Union / Find structure to remove walls.
 
 import DisjointSet
 import Data.List
@@ -6,8 +7,9 @@ import System.Random.Shuffle
 import System.Random.Mersenne.Pure64 (newPureMT)
 
 -- Settings
-height = 5
-width = 5
+height = 20
+width = 20
+dims = (width, height)
 wallStr = "x"
 emptyStr = " "
 
@@ -17,8 +19,7 @@ type Dims = (Int, Int)
 -- An edge is also just a 2D int tuple, as the wall between two cells.
 type Edge = (Int, Int)
 
--- Coordinate pairs readable by Python (PIL).
--- (x1, y1, x2, y2)
+-- Coordinate pairs readable by Python (PIL) (x1, y1, x2, y2).
 type CoordPair = (Int, Int, Int, Int)
 
 -- A maze is just an arbitrary collection of walls.
@@ -27,18 +28,6 @@ type Maze = [Edge]
 -- Cartesian distance between two coordinates.
 dist :: Edge -> Edge -> Int
 dist (px, py) (qx, qy) = abs (px - qx) + abs (py - qy)
-
--- Print simple text representation of maze.
--- mazeStr :: Maze -> Dims -> String
--- mazeStr xs (dx, dy) = concatMap sym coords
---   where
---     coords = [(x, y) | x <- [0..dx], y <- [0..dy]]
---     combs = concatMap (\((a,b),(c,d)) -> [(a,b),(c,d)]) xs
---     sym (x, y)
---       | (x, y) `elem` combs = wallStr ++ formatStr
---       | otherwise           = emptyStr ++ formatStr
---         where
---           formatStr = if x == dx then "\n" else ""
 
 -- Return a list of edges for a maze with given dimensions.
 -- Excludes boundary walls.
@@ -82,12 +71,10 @@ genMaze (w, h) edges sets = inner_edges ++ outer_edges
 perms2 xs = concat $ zipWith (zip . repeat) xs $ tails xs
 
 main = do
-  -- putStrLn $ mazeStr maze (width, height)
   gen <- newPureMT
-  print $ (width, height)
-  print $ genMaze (width, height) (shuffle' edges (length edges) gen) sets
+  print $ dims
+  print $ genMaze dims (shuffle' edges (length edges) gen) sets
     where
-      l = (width*height)-1
-      cells = [0 .. l]
+      cells = [0..(width*height)]
       sets = makeSet cells
-      edges = genEdges (width, height)
+      edges = genEdges dims

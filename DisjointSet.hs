@@ -1,7 +1,5 @@
 -- Quick and dirty Union-Find data structure.
 
--- TODO don't duplicate head.
-
 module DisjointSet
 ( dUnion
 , dFind
@@ -11,6 +9,7 @@ module DisjointSet
 ) where
 
 import Data.List
+import Data.Function
 
 -- TODO remove repeated type
 type Edge = (Int, Int)
@@ -21,12 +20,12 @@ data DNode a = DNode a a deriving (Eq, Show)
 -- A Disjoint Set contains several non-overlapping subsets.
 type DSet a = [DNode a]
 
--- Merge two sets, choose the head of the first.
--- TODO choose smaller list for merge.
+-- Merge two sets, larger first, choose the head of the first.
 dUnion :: (DSet a) -> (DSet a) -> (DSet a)
-dUnion l1@(x:xs) y = l1 ++ (map (newHead x) y)
+dUnion l1 l2 = bl ++ (map (newHead (head bl)) sl)
+  where [sl, bl] = sortBy (compare `on` length) [l1, l2]
 
--- Find the head of the subset.
+-- Find the head of the node.
 dFind :: (DNode a) -> a
 dFind (DNode h x) = h
 
