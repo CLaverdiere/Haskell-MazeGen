@@ -61,7 +61,7 @@ adjacent (w, h) (x, y) = dh + dw == 1
 
 -- Return coordinate pairs for maze given random edge input.
 genMaze :: Dims -> [Edge] -> [(DSet Int)] -> [CoordPair]
-genMaze (w, h) edges sets = inner_edges-- ++ outer_edges
+genMaze (w, h) edges sets = inner_edges ++ outer_edges
   where
     (m_edges, m_sets) = foldl nextUnion (edges, sets) edges
     inner_edges = map (genCoord (w, h)) m_edges
