@@ -43,8 +43,8 @@ genCoord (w, h) (p1, p2) =
   let p1d = (p1 `div` h)
       p2d = (p2 `div` h)
       p1m = (p1 `mod` w)
-  in if p1d == p2d then (p1m, p1d, p1m+1, p1d)
-                   else (p1m, p1d, p1m, p1d+1)
+  in if p1d == p2d then (p1m+1, p1d, p1m+1, p1d+1)
+                   else (p1m, p2d, p1m+1, p2d)
 
 -- Return coordinate pairs of maze boundary.
 genBoundary :: Dims -> [CoordPair]
@@ -61,7 +61,7 @@ adjacent (w, h) (x, y) = dh + dw == 1
 
 -- Return coordinate pairs for maze given random edge input.
 genMaze :: Dims -> [Edge] -> [(DSet Int)] -> [CoordPair]
-genMaze (w, h) edges sets = inner_edges ++ outer_edges
+genMaze (w, h) edges sets = inner_edges-- ++ outer_edges
   where
     (m_edges, m_sets) = foldl nextUnion (edges, sets) edges
     inner_edges = map (genCoord (w, h)) m_edges
