@@ -7,8 +7,8 @@ import System.Random.Shuffle
 import System.Random.Mersenne.Pure64 (newPureMT)
 
 -- Settings
-height = 20
-width = 20
+height = 30
+width = 30
 dims = (width, height)
 wallStr = "x"
 emptyStr = " "
